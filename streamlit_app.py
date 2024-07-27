@@ -48,10 +48,6 @@ def calculate_exact_percentile(vo2_max, age, sex):
         # Define the percentile boundaries based on given categories
         percentiles_boundaries = [95, 80, 60, 40, 20]
         
-        # Ensure interpolated_values and percentiles_boundaries have the same length
-        if len(interpolated_values) != len(percentiles_boundaries):
-            raise ValueError("Mismatch between interpolated values and percentile boundaries")
-        
         # Add lower and upper bounds for interpolation
         interpolated_values = [interpolated_values[0] * 1.2] + interpolated_values + [interpolated_values[-1] * 0.8]
         percentiles_boundaries = [100] + percentiles_boundaries + [0]
@@ -84,6 +80,21 @@ def calculate_vo2_decline(vo2_max, age, decline_rate=0.7):
     vo2_values = vo2_max * (1 - decline_rate / 100) ** (ages - age)
     return ages, vo2_values
 
+def calculate_target_vo2max(age, sex):
+    percentiles = percentile_data_men if sex == "Male" else percentile_data_women
+    interpolated_values = interpolate_vo2(age, percentiles)
+    # The 75th percentile would be between the 80th and 60th percentile values
+    target_vo2max = interpolated_values[1] + (interpolated_values[2] - interpolated_values[1]) * 0.25
+    return round(target_vo2max, 1)
+
+def suggest_workout(vo2_max, target_vo2max):
+    if vo2_max >= target_vo2max:
+        return "Maintain: 3-4 HIIT sessions per week, 2-3 moderate cardio sessions"
+    elif vo2_max >= target_vo2max * 0.9:
+        return "Almost there: 4-5 HIIT sessions per week, 2-3 longer cardio sessions"
+    else:
+        return "Improvement needed: Start with 2-3 HIIT sessions, gradually increase intensity and duration of cardio workouts"
+
 # Streamlit app
 st.title("VO2 Max Analysis Dashboard")
 
@@ -99,6 +110,18 @@ Additionally, the app provides an estimate of how your VO2 max may decline with 
 - **Vigorous activities (35 ml/kg/min)**: Hiking, running
 - **High-intensity activities (50 ml/kg/min)**: Intense cycling, swimming
 - **Elite endurance athletes (70 ml/kg/min)**: Competitive marathon running, professional cycling
+
+### Additional Examples
+- **Run 10 MPH on Flat Ground (60 ml/kg/min)**
+- **Jog 6 MPH Up Steep Hill (50 ml/kg/min)**
+- **Carry Heavy Object Upstairs (45 ml/kg/min)**
+- **Jog 6 MPH on Flat Ground (40 ml/kg/min)**
+- **Briskly Climb Stairs (35 ml/kg/min)**
+- **Walk 3 MPH Up Steep Hill (30 ml/kg/min)**
+- **Walk 3 MPH Up Slight Incline (25 ml/kg/min)**
+- **Walk 3 MPH on Flat Ground (20 ml/kg/min)**
+- **Walk 1 MPH on Flat Ground (10 ml/kg/min)**
+- **Sleep (3.5 ml/kg/min)**
 """)
 
 vo2_max = st.number_input("Enter your current VO2 max (ml/kg/min):", min_value=0.0, format="%.1f")
@@ -110,10 +133,37 @@ decline_rate = st.slider("Select your VO2 max decline rate (% per year):", min_v
 
 if vo2_max and age and sex:
     exact_percentile = calculate_exact_percentile(vo2_max, age, sex)
+    target_vo2max = calculate_target_vo2max(age, sex)
+    
     if exact_percentile is not None:
         fitness_category = get_fitness_category(exact_percentile)
-        st.write(f"Exact VO2 max percentile for a {age}-year-old {sex}: {exact_percentile:.1f}th percentile")
+        st.write(f"Your VO2 max: {vo2_max:.1f} ml/kg/min")
+        st.write(f"Percentile for a {age}-year-old {sex}: {exact_percentile:.1f}th percentile")
         st.write(f"Fitness Category: {fitness_category}")
+        
+        st.write(f"\nTarget VO2 max (75th percentile): {target_vo2max} ml/kg/min")
+        
+        progress = min(vo2_max / target_vo2max, 1.0)
+        st.progress(progress)
+        st.write(f"You've achieved {progress*100:.1f}% of the target VO2 max")
+        
+        if vo2_max >= target_vo2max:
+            st.success(f"Great job! Your VO2 max is at or above the 75th percentile for your age and sex.")
+            st.write("It's important to maintain this level of fitness. Consider these tips:")
+            st.write("- Continue with your current exercise routine")
+            st.write("- Focus on maintaining overall health through balanced nutrition")
+            st.write("- Include variety in your workouts to prevent plateaus")
+        else:
+            st.warning(f"Your VO2 max is below the 75th percentile target for your age and sex.")
+            st.write("Here are some tips to improve your VO2 max:")
+            st.write("1. Incorporate High-Intensity Interval Training (HIIT) into your routine")
+            st.write("2. Gradually increase the duration and intensity of your cardio workouts")
+            st.write("3. Include a mix of cardio exercises (running, cycling, swimming)")
+            st.write("4. Ensure proper rest and recovery between workouts")
+            st.write("5. Maintain a balanced diet rich in nutrients to support your training")
+
+        workout_suggestion = suggest_workout(vo2_max, target_vo2max)
+        st.write(f"\nPersonalized Workout Suggestion: {workout_suggestion}")
         
         # Calculate VO2 max decline
         ages, vo2_decline = calculate_vo2_decline(vo2_max, age, decline_rate)
@@ -156,3 +206,6 @@ if vo2_max and age and sex:
             st.pyplot(fig)
         except Exception as e:
             st.error(f"An error occurred while generating the plot: {str(e)}")
+
+        st.write("\n### Why VO2 Max is Important")
+        st.write("VO2 max is a measure of your body's maximum oxygen uptake capacity. It's an indicator of cardiovascular fitness and can predict overall health and longevity. Improving your VO2 max can lead to better endurance, reduced risk of cardiovascular diseases, and improved overall quality of life.")
