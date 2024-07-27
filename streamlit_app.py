@@ -110,18 +110,6 @@ Additionally, the app provides an estimate of how your VO2 max may decline with 
 - **Vigorous activities (35 ml/kg/min)**: Hiking, running
 - **High-intensity activities (50 ml/kg/min)**: Intense cycling, swimming
 - **Elite endurance athletes (70 ml/kg/min)**: Competitive marathon running, professional cycling
-
-### Additional Examples
-- **Run 10 MPH on Flat Ground (60 ml/kg/min)**
-- **Jog 6 MPH Up Steep Hill (50 ml/kg/min)**
-- **Carry Heavy Object Upstairs (45 ml/kg/min)**
-- **Jog 6 MPH on Flat Ground (40 ml/kg/min)**
-- **Briskly Climb Stairs (35 ml/kg/min)**
-- **Walk 3 MPH Up Steep Hill (30 ml/kg/min)**
-- **Walk 3 MPH Up Slight Incline (25 ml/kg/min)**
-- **Walk 3 MPH on Flat Ground (20 ml/kg/min)**
-- **Walk 1 MPH on Flat Ground (10 ml/kg/min)**
-- **Sleep (3.5 ml/kg/min)**
 """)
 
 vo2_max = st.number_input("Enter your current VO2 max (ml/kg/min):", min_value=0.0, format="%.1f")
